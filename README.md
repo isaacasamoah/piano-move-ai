@@ -4,6 +4,15 @@
 
 **Portfolio project demonstrating production-ready voice AI for service businesses.**
 
+## 📞 Live Demo
+
+**Try it now!**
+- **Phone:** +1 (229) 922-3706
+- **Backend API:** https://backend-production-178ff.up.railway.app
+- **Health Check:** https://backend-production-178ff.up.railway.app/health
+
+Call the number, answer a few questions about your piano move, and receive an instant SMS quote!
+
 ## 🎯 What This Demonstrates
 
 - **Voice AI orchestration** - Twilio → STT → LLM → TTS pipeline
@@ -273,6 +282,15 @@ kubectl apply -f k8s/
 - Twilio webhook signature verification
 - Rate limiting (10 calls/min per number)
 - PII encryption (customer addresses, phone numbers)
+
+## ⚠️ Trial Account Notes
+
+This demo uses Twilio trial account with some limitations:
+- **Inbound calls:** Caller's number must be verified in Twilio (free, takes 30 seconds)
+- **SMS length:** 160 characters (full quote in production would be longer)
+- **Geocoding:** Uses free OpenStreetMap API (production would use Google Maps for accuracy)
+
+These are intentional MVP choices to demonstrate the architecture without API costs. Production deployment would use paid Twilio account and Google Maps API.
 
 ## 📄 License
 
