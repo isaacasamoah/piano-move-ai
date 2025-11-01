@@ -85,6 +85,16 @@ async def calculate_quote(details: QuoteDetails) -> QuoteCalculationResult:
         details.delivery_address
     )
 
+    # Validate distance (if > 5000km, geocoding probably failed)
+    # Australia's max distance is ~4000km, so > 5000km is clearly wrong
+    if distance_km > 5000:
+        logger.warning(
+            "distance_validation_failed",
+            calculated_distance=distance_km,
+            using_fallback=50.0
+        )
+        distance_km = 50.0  # Reasonable fallback
+
     # Distance charge
     distance_charge = distance_km * PRICE_PER_KM
 
@@ -121,13 +131,19 @@ async def calculate_quote(details: QuoteDetails) -> QuoteCalculationResult:
     return result
 
 
-def format_quote_summary(details: QuoteDetails, calculation: QuoteCalculationResult) -> str:
+def format_quote_summary(details: QuoteDetails, calculation: QuoteCalculationResult, trial_mode: bool = True) -> str:
     """
     Format a professional quote summary for SMS delivery.
+    Trial mode uses shorter format (160 char limit for Twilio trial).
     """
     piano_name = details.piano_type.value.replace('_', ' ').title() if details.piano_type else "Piano"
 
-    summary = f"""🎹 PianoMove Quote
+    if trial_mode:
+        # Short version for Twilio trial (160 char limit)
+        summary = f"PianoMove Quote: {piano_name}, {calculation.distance_km:.0f}km, {details.stairs_count or 0} stairs. TOTAL: ${calculation.total:.2f}"
+    else:
+        # Full version for production
+        summary = f"""🎹 PianoMove Quote
 
 Piano: {piano_name}
 Route: {calculation.distance_km:.0f}km
