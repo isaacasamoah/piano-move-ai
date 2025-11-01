@@ -1,14 +1,6 @@
-# PianoMove AI Backend
+# Backend Setup
 
-FastAPI backend for voice-powered piano moving quote generation using Twilio and Claude AI.
-
-## Architecture
-
-- **FastAPI**: Async web framework
-- **Twilio**: Voice call handling and SMS delivery
-- **Claude (Anthropic)**: Conversational AI (future integration)
-- **Geopy**: Distance calculation between addresses
-- **SQLite**: Session storage (MVP - use Postgres in production)
+FastAPI backend for PianoMove AI voice quote system.
 
 ## Quick Start
 
@@ -17,7 +9,7 @@ FastAPI backend for voice-powered piano moving quote generation using Twilio and
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
@@ -25,50 +17,69 @@ pip install -r requirements.txt
 
 ```bash
 cp .env.example .env
-# Edit .env with your credentials
 ```
 
-Required credentials:
-- **Twilio**: Get from https://console.twilio.com
-- **Anthropic API**: Get from https://console.anthropic.com
+Edit `.env` with your credentials:
 
-### 3. Run Development Server
+```bash
+# Twilio (get from console.twilio.com)
+TWILIO_ACCOUNT_SID=your_sid
+TWILIO_AUTH_TOKEN=your_token
+TWILIO_PHONE_NUMBER=+1234567890
+
+# Anthropic (get from console.anthropic.com)
+ANTHROPIC_API_KEY=sk-ant-...
+
+# Optional
+SERVER_URL=http://localhost:8000
+DEBUG=True
+```
+
+### 3. Run Server
 
 ```bash
 python -m app.main
-# Or use uvicorn directly:
-uvicorn app.main:app --reload
 ```
 
 Server runs on `http://localhost:8000`
 
-### 4. Expose Local Server (for Twilio webhooks)
-
-Use ngrok to expose your local server:
+### 4. Expose for Twilio (Development)
 
 ```bash
 ngrok http 8000
 ```
 
-Copy the ngrok URL and configure it in Twilio:
-- Go to your Twilio Phone Number settings
-- Set Voice Webhook to: `https://your-ngrok-url.ngrok.io/twilio/voice`
+Configure Twilio webhook:
+- Go to Phone Number settings in Twilio Console
+- Set Voice Webhook: `https://your-url.ngrok.io/twilio/voice`
+- Method: POST
 
 ## API Endpoints
 
-- `GET /health` - Health check
-- `POST /twilio/voice` - Twilio webhook for voice calls
-- `GET /` - API information
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Health check |
+| `/twilio/voice` | POST | Twilio voice webhook |
+| `/` | GET | API info |
 
-## Conversation Flow
+## Architecture
 
-1. **Greeting**: "What type of piano are you moving?"
-2. **Piano Type**: Upright, Baby Grand, or Grand
-3. **Pickup Address**: Where to pick up the piano
-4. **Delivery Address**: Where to deliver the piano
-5. **Stairs**: How many stairs (if any)
-6. **Insurance**: Whether customer wants insurance
-7. **Quote**: Calculate and deliver quote via SMS
+```
+app/
+├── main.py              # FastAPI app, routes
+├── config.py            # Environment settings
+├── schemas.py           # Pydantic models
+├── conversation.py      # State machine
+├── twilio_handler.py    # Voice webhooks
+├── quote_engine.py      # Pricing logic
+└── llm.py              # Claude integration
+```
+
+## Conversation States
+
+```
+GREETING → PIANO_TYPE → PICKUP_ADDRESS → DELIVERY_ADDRESS → STAIRS → INSURANCE → QUOTE
+```
 
 ## Quote Calculation
 
@@ -77,97 +88,65 @@ Copy the ngrok URL and configure it in Twilio:
 - Baby Grand: $350
 - Grand: $500
 
-**Additional Charges:**
-- Distance: $1.50/km
+**Additional:**
+- Distance: $1.50/km (geocoded)
 - Stairs: $15/stair
-- Insurance: 15% of subtotal
+- Insurance: +15%
 
-## Project Structure
-
-```
-backend/
-├── app/
-│   ├── main.py              # FastAPI app and routes
-│   ├── config.py            # Settings and env vars
-│   ├── schemas.py           # Pydantic models
-│   ├── conversation.py      # State machine and session management
-│   ├── twilio_handler.py    # Twilio webhook logic
-│   └── quote_engine.py      # Quote calculation
-├── requirements.txt
-├── .env.example
-└── README.md
-```
+Implementation: `app/quote_engine.py:46`
 
 ## Testing
 
-1. **Health Check:**
-   ```bash
-   curl http://localhost:8000/health
-   ```
+```bash
+# Health check
+curl http://localhost:8000/health
 
-2. **Call Your Number:**
-   - Call the Twilio number
-   - Follow the voice prompts
-   - Receive SMS with quote
+# Test call
+# Call your Twilio number and follow prompts
+```
 
-## Production Deployment
+## Deployment
 
-### Railway (Recommended)
+### Railway
 
 ```bash
-# Install Railway CLI
-npm i -g @railway/cli
-
-# Login and deploy
-railway login
-railway init
+railway link
 railway up
 ```
 
 Set environment variables in Railway dashboard.
 
-### Render
+### Manual
 
-1. Create new Web Service
-2. Connect GitHub repo
-3. Set build command: `pip install -r requirements.txt`
-4. Set start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-5. Add environment variables
+Requirements:
+- Python 3.11+ runtime
+- Environment variables configured
+- Public HTTPS endpoint
 
-## Environment Variables
+Start command:
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
 
-See `.env.example` for all required variables.
+## Logging
 
-## Monitoring
-
-Logs are output as structured JSON (using `structlog`):
+Structured JSON logs via `structlog`:
 
 ```json
 {
   "event": "user_input",
-  "call_sid": "CA1234...",
+  "call_sid": "CAxxxx",
   "current_state": "piano_type",
-  "input": "baby grand",
-  "timestamp": "2024-01-15T10:30:00Z"
+  "input": "baby grand"
 }
 ```
 
-## Cost Tracking
+## Production Considerations
 
-Per call costs (approximate):
-- Twilio voice: $0.0085/min
-- Twilio SMS: $0.0075/message
-- Geopy API: Free (using Nominatim)
-- **Total: ~$0.05/call** (3-min average)
-
-## Next Steps
-
-- [ ] Add database persistence (Postgres)
-- [ ] Integrate Claude for smarter conversation handling
-- [ ] Add call recording
-- [ ] Build admin dashboard
-- [ ] Add PDF quote generation
-- [ ] Implement analytics
+- **Sessions:** Currently in-memory. Use Redis for multi-instance deployment.
+- **Geocoding:** Uses free Nominatim. Consider Google Maps API for accuracy.
+- **Rate limiting:** Add rate limiting middleware.
+- **Webhook verification:** Implement Twilio signature verification.
 
 ## License
 

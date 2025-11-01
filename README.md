@@ -1,58 +1,46 @@
 # 🎹 PianoMove AI
 
-> Voice AI quote generator for piano removalists. Call a number, describe your move, get an instant quote via SMS.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
 
-**Portfolio project demonstrating production-ready voice AI for service businesses.**
+> Production-ready voice AI system for automated quote generation. Customers call, describe their piano move, and receive instant quotes via SMS.
 
-## 📞 Live Demo
+## 🎯 Overview
 
-**Try it now!**
+PianoMove AI demonstrates a complete voice AI pipeline for service businesses. The system uses Twilio for telephony, Claude Sonnet 4 for natural language understanding, and FastAPI for orchestration.
+
+**Live Demo:**
 - **Phone:** +1 (229) 922-3706
-- **Backend API:** https://backend-production-178ff.up.railway.app
-- **Health Check:** https://backend-production-178ff.up.railway.app/health
+- **API:** https://backend-production-178ff.up.railway.app
+- **Health:** https://backend-production-178ff.up.railway.app/health
 
-**To test the demo:**
-1. Email me your phone number (with country code, e.g., +61412345678)
-2. I'll verify it in Twilio (takes 30 seconds)
-3. Call +1 (229) 922-3706
-4. Answer questions about a piano move
-5. Receive instant SMS quote!
-
-*Note: Twilio trial requires caller verification. Once I add your number, you can call immediately.*
-
-## 🎯 What This Demonstrates
-
-- **Voice AI orchestration** - Twilio → STT → LLM → TTS pipeline
-- **Production Python** - Clean async/await patterns, error handling
-- **Conversation design** - Natural multi-turn context management
-- **Business value** - Real pricing logic, unit economics, scaling strategy
-- **Product thinking** - Dashboard, monitoring, cost tracking
+*Note: Demo uses Twilio trial - phone numbers require verification. Contact to be added.*
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Python 3.11+
-- Twilio account (free trial works)
-- Optional: Anthropic API key (Phase 2)
+- Twilio account ([free trial](https://www.twilio.com/try-twilio))
+- Anthropic API key ([get one](https://console.anthropic.com/))
 
-### Phase 1: Core Backend (COMPLETED ✅)
+### Installation
 
 ```bash
-cd backend
+# Clone repository
+git clone https://github.com/isaacasamoah/pianomove-ai.git
+cd pianomove-ai/backend
 
 # Create virtual environment
 python -m venv venv
-source venv/bin/activate  # or `venv\Scripts\activate` on Windows
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Test setup
-python test_setup.py
-
 # Configure environment
 cp .env.example .env
-# Edit .env with your Twilio credentials
+# Edit .env with your credentials
 
 # Start server
 python -m app.main
@@ -60,41 +48,26 @@ python -m app.main
 
 Server runs on `http://localhost:8000`
 
-### Expose with Ngrok (for Twilio webhooks)
+### Expose with Ngrok
+
+For Twilio webhooks:
 
 ```bash
 ngrok http 8000
-# Copy the HTTPS URL to your Twilio phone number webhook settings
-# Set to: https://your-ngrok-url.ngrok.io/twilio/voice
-```
-
-### Phase 2: Dashboard (Coming Next)
-
-```bash
-cd frontend
-npm install
-npm run dev  # Runs on http://localhost:3000
+# Configure Twilio webhook: https://your-url.ngrok.io/twilio/voice
 ```
 
 ## 📞 How It Works
 
-1. **Customer calls** the Twilio number
-2. **Twilio webhook** sends audio to your FastAPI server
-3. **STT** (Deepgram) converts speech to text
-4. **Claude LLM** extracts:
-   - Piano type (baby grand, upright, grand)
-   - Pickup address
-   - Delivery address
-   - Stairs count
-   - Elevator access
-   - Insurance preference
-5. **Quote engine** calculates price based on:
-   - Distance (Google Maps API)
-   - Piano type ($200-500 base)
-   - Stairs ($50/10 stairs)
-   - Insurance (10% of total)
-6. **TTS** (Cartesia) speaks the quote
-7. **SMS** sends detailed quote to customer
+1. Customer calls Twilio number
+2. Twilio STT converts speech to text
+3. Claude extracts structured data (piano type, addresses, stairs, insurance)
+4. System geocodes addresses and calculates distance
+5. Quote engine applies pricing logic
+6. TTS speaks quote over phone
+7. SMS delivers detailed breakdown
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed diagrams and technical deep-dive.
 
 ## 💰 Pricing Logic
 
@@ -106,211 +79,163 @@ base_price = {
 }
 
 quote = base_price[piano_type]
-quote += distance_km * 1.50  # $1.50/km
-quote += (stairs_count / 10) * 50  # $50 per 10 stairs
+quote += distance_km * 1.50      # $1.50/km
+quote += stairs_count * 15       # $15/stair
 if has_insurance:
-    quote *= 1.10  # +10% for insurance
+    quote *= 1.15                # +15% insurance
 ```
-
-## 📊 Dashboard
-
-View at `http://localhost:3000`
-
-- **Recent calls** - timestamp, customer, quote, duration
-- **Call recordings** - playback with transcript
-- **Cost tracking** - STT, TTS, LLM costs per call
-- **Quotes** - downloadable PDFs
 
 ## 🏗 Architecture
 
-### MVP (Current)
 ```
-Phone → Twilio → FastAPI → Claude/STT/TTS → SMS
-                    ↓
-                PostgreSQL
-```
-
-### Production Scale (10K calls/day)
-```
-                    ┌─────────────────┐
-Phone → Twilio  →  │  Load Balancer  │
-                    └────────┬────────┘
-                             │
-                    ┌────────┴────────┐
-                    │  EKS Cluster    │
-                    │  ┌───────────┐  │
-                    │  │ API Pods  │  │
-                    │  │ (Async)   │  │
-                    │  └─────┬─────┘  │
-                    └────────┼────────┘
-                             │
-              ┌──────────────┼──────────────┐
-              │              │              │
-         ┌────▼────┐   ┌────▼────┐   ┌────▼────┐
-         │ Redis   │   │Postgres │   │   S3    │
-         │ Cluster │   │ (Multi) │   │  (Recs) │
-         └─────────┘   └─────────┘   └─────────┘
+Customer Call → Twilio → FastAPI → Claude NLU
+                           ↓
+                    Quote Engine → SMS Delivery
 ```
 
-See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for full scaling strategy.
+**Key Components:**
+- **FastAPI** - Async webhook orchestration
+- **Twilio** - Voice, STT, TTS, SMS
+- **Claude Sonnet 4** - Natural language extraction
+- **Nominatim** - Free geocoding (OSM)
+- **Railway** - Cloud deployment
 
-## 💸 Unit Economics
-
-**Cost per call:** ~$0.50
-- STT: $0.006/min (Deepgram)
-- TTS: $0.15/1K chars (Cartesia)
-- LLM: $3/1M tokens (Claude)
-- Twilio: $0.0085/min
-
-**At $1M ARR:**
-- ~11,765 successful quotes @ $850 avg
-- ~117,650 total calls (10% conversion)
-- **AI infrastructure: $58,825/year**
-- **Gross margin: 94%**
-
-## 🧪 Testing
-
-```bash
-# Backend tests
-cd backend
-pytest
-
-# Frontend tests
-cd frontend
-npm test
-
-# Integration test (requires running services)
-python scripts/test_call_flow.py
-```
-
-## 📝 Environment Variables
-
-```bash
-# Backend (.env)
-DATABASE_URL=postgresql://user:pass@localhost/pianomove
-REDIS_URL=redis://localhost:6379
-ANTHROPIC_API_KEY=sk-ant-...
-DEEPGRAM_API_KEY=...
-CARTESIA_API_KEY=...
-TWILIO_ACCOUNT_SID=...
-TWILIO_AUTH_TOKEN=...
-TWILIO_PHONE_NUMBER=+1...
-GOOGLE_MAPS_API_KEY=...
-
-# Frontend (.env.local)
-NEXT_PUBLIC_API_URL=http://localhost:8000
-```
+Full architecture documentation: [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ## 📂 Project Structure
 
 ```
 pianomove-ai/
-├── .claude/                   # Claude Code team collaboration
 ├── backend/
 │   ├── app/
-│   │   ├── main.py           # FastAPI app
-│   │   ├── twilio_handler.py # Voice webhook
-│   │   ├── llm.py            # Claude integration
-│   │   ├── quote_engine.py   # Pricing logic
-│   │   ├── stt.py            # Speech-to-text
-│   │   ├── tts.py            # Text-to-speech
-│   │   └── models.py         # Database models
-│   ├── tests/
-│   └── requirements.txt
-├── frontend/
-│   ├── app/
-│   │   ├── page.tsx          # Dashboard
-│   │   └── components/       # React components
-│   └── package.json
-├── docs/
-│   ├── ARCHITECTURE.md       # Scaling strategy
-│   └── CONVERSATION_DESIGN.md
-├── scripts/
-│   └── test_call_flow.py
-└── PROJECT_PLAN.md           # Full team planning doc
+│   │   ├── main.py            # FastAPI app
+│   │   ├── twilio_handler.py  # Voice webhooks
+│   │   ├── llm.py             # Claude integration
+│   │   ├── conversation.py    # State machine
+│   │   ├── quote_engine.py    # Pricing logic
+│   │   ├── schemas.py         # Pydantic models
+│   │   └── config.py          # Settings
+│   ├── requirements.txt
+│   └── .env.example
+├── ARCHITECTURE.md            # Technical documentation
+├── LICENSE
+└── README.md
 ```
 
-## 🎬 Demo
+## 🔧 Configuration
 
-**Live demo:** [Call +1-XXX-XXX-XXXX]
+Environment variables (`.env`):
 
-**Video walkthrough:** [Loom link]
+```bash
+# Twilio
+TWILIO_ACCOUNT_SID=your_account_sid
+TWILIO_AUTH_TOKEN=your_auth_token
+TWILIO_PHONE_NUMBER=+1234567890
 
-**Try it yourself:**
-1. Call the number
-2. Describe your piano move
-3. Get instant quote via SMS
+# Anthropic
+ANTHROPIC_API_KEY=sk-ant-...
 
-## 🧠 Key Technical Decisions
+# Optional
+SERVER_URL=http://localhost:8000
+DEBUG=True
+```
 
-### Why FastAPI?
-- Async/await native (critical for voice latency)
-- Excellent webhook handling
-- Production-ready (used by Microsoft, Netflix)
+## 🧪 Testing
 
-### Why Claude Sonnet 4?
-- Superior function calling for structured extraction
-- Extended thinking for complex quote logic
-- Cost-effective at scale ($3/1M tokens)
+```bash
+# Test basic setup
+python backend/test_setup.py
 
-### Why Twilio (not LiveKit)?
-- Faster MVP development (6 hours vs 12+)
-- Production-grade phone infrastructure
-- Focus on conversation design over plumbing
+# Make a test call
+# Call +1 (229) 922-3706 and follow prompts
+```
 
-### Why separate Dashboard?
-- Shows product thinking (not just backend work)
-- Real-time monitoring critical for production
-- Cost tracking essential for unit economics
+## 💸 Cost Structure
+
+Per-call costs (3-minute average):
+- Twilio voice: $0.026
+- Twilio SMS: $0.008
+- Claude API: $0.003
+- Geocoding: Free
+
+**Total: ~$0.04/call**
+
+At 10,000 calls/month: **$400 infrastructure cost**
 
 ## 🚀 Deployment
 
-### Railway (MVP)
+### Railway (Recommended)
+
 ```bash
+# Connect GitHub repository
+railway link
+
+# Deploy
 railway up
 ```
 
-### Kubernetes (Production)
-```bash
-# See docs/ARCHITECTURE.md for full EKS setup
-kubectl apply -f k8s/
-```
+Auto-deploys on git push to main.
 
-## 📈 Monitoring
+### Manual Deployment
 
-- **Prometheus** - API latency, error rates
-- **Grafana** - Call volume, costs, conversion rates
-- **Sentry** - Error tracking
-- **CloudWatch** - Logs (Twilio webhooks, LLM calls)
+Requires:
+- Python 3.11+ runtime
+- Environment variables configured
+- Public HTTPS endpoint for Twilio webhooks
 
 ## 🔒 Security
 
-- API keys in environment variables
-- Twilio webhook signature verification
-- Rate limiting (10 calls/min per number)
-- PII encryption (customer addresses, phone numbers)
+- Environment variables for all secrets
+- Twilio webhook signature verification (recommended)
+- In-memory sessions (MVP) - use Redis for production
+- Structured logging (no PII in logs)
 
-## ⚠️ Trial Account Notes
+## 🎓 Technical Highlights
 
-This demo uses Twilio trial account with some limitations:
-- **Inbound calls:** Caller's number must be verified in Twilio (free, takes 30 seconds)
-- **SMS length:** 160 characters (full quote in production would be longer)
-- **Geocoding:** Uses free OpenStreetMap API (production would use Google Maps for accuracy)
+**Async/await throughout:**
+```python
+async def handle_voice_input(call_sid: str, speech_result: str):
+    session = get_or_create_session(call_sid)
+    next_state = await process_user_input(session, speech_result)
+    # ...
+```
 
-These are intentional MVP choices to demonstrate the architecture without API costs. Production deployment would use paid Twilio account and Google Maps API.
+**Graceful fallbacks:**
+- Claude unavailable → keyword extraction
+- Geocoding fails → 50km default
+- Invalid input → re-prompt in same state
+
+**State machine design:**
+```
+GREETING → PIANO_TYPE → PICKUP → DELIVERY → STAIRS → INSURANCE → QUOTE
+```
+
+## 📖 Documentation
+
+- [ARCHITECTURE.md](ARCHITECTURE.md) - System design, call flow, scaling
+- [backend/README.md](backend/README.md) - Backend setup details
+- [.env.example](backend/.env.example) - Configuration template
+
+## 🤝 Contributing
+
+This is an open-source project. Contributions welcome!
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
 
 ## 📄 License
 
-MIT
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 👤 Author
 
-Isaac Asamoah - [LinkedIn](https://linkedin.com/in/isaacasamoah) - [GitHub](https://github.com/isaacasamoah)
-
-**Built for:** Senior AI Engineer role - Gold Coast AI startup
-
-**Timeline:** 8 hours (proof of concept → production-ready demo)
+**Isaac Asamoah**
+- LinkedIn: [linkedin.com/in/isaacasamoah](https://linkedin.com/in/isaacasamoah)
+- GitHub: [github.com/isaacasamoah](https://github.com/isaacasamoah)
+- Email: isaacasamoah@gmail.com
 
 ---
 
-⭐ **If this impressed you, [let's talk](mailto:isaacasamoah@gmail.com)** ⭐
+Built with FastAPI, Claude, and Twilio. Deployed on Railway.
