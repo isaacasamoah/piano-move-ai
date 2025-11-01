@@ -60,7 +60,7 @@ def get_next_prompt(session: ConversationSession) -> str:
 
     prompts = {
         ConversationState.GREETING: (
-            "Hi! I'm PianoMove AI. I can help you get an instant quote for moving your piano. "
+            "Hi! I'm Sandra from PianoMove AI. I can help you get an instant quote for moving your piano. "
             "First, what type of piano are you moving? Is it an upright, baby grand, or grand piano?"
         ),
         ConversationState.PIANO_TYPE: (

@@ -149,6 +149,7 @@ async def generate_and_deliver_quote(call_sid: str, from_number: str) -> str:
     # Create final TwiML response
     response = VoiceResponse()
     response.say(summary_speech, voice="Polly.Joanna")
+    response.pause(length=2)  # 2 second pause before hanging up
     response.hangup()
 
     logger.info(

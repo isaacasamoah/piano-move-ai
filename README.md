@@ -11,7 +11,14 @@
 - **Backend API:** https://backend-production-178ff.up.railway.app
 - **Health Check:** https://backend-production-178ff.up.railway.app/health
 
-Call the number, answer a few questions about your piano move, and receive an instant SMS quote!
+**To test the demo:**
+1. Email me your phone number (with country code, e.g., +61412345678)
+2. I'll verify it in Twilio (takes 30 seconds)
+3. Call +1 (229) 922-3706
+4. Answer questions about a piano move
+5. Receive instant SMS quote!
+
+*Note: Twilio trial requires caller verification. Once I add your number, you can call immediately.*
 
 ## 🎯 What This Demonstrates
 
