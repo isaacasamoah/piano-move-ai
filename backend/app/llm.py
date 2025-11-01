@@ -10,10 +10,20 @@ from app.schemas import PianoType, ConversationState
 logger = structlog.get_logger()
 
 
-def get_claude_client() -> Anthropic:
+def get_claude_client() -> Optional[Anthropic]:
     """Get initialized Anthropic client."""
     settings = get_settings()
-    return Anthropic(api_key=settings.anthropic_api_key)
+
+    # Check if API key is set (not the placeholder)
+    if not settings.anthropic_api_key or settings.anthropic_api_key == "not_set":
+        logger.warning("anthropic_api_key_not_configured")
+        return None
+
+    try:
+        return Anthropic(api_key=settings.anthropic_api_key)
+    except Exception as e:
+        logger.error("claude_client_init_failed", error=str(e))
+        return None
 
 
 async def extract_quote_data(
@@ -26,8 +36,15 @@ async def extract_quote_data(
 
     This is much more robust than keyword matching - handles variations,
     typos, and natural conversational patterns.
+
+    Falls back to keyword matching if Claude is unavailable.
     """
     client = get_claude_client()
+
+    # If Claude client not available, fall back to keyword extraction
+    if client is None:
+        logger.warning("claude_unavailable_using_fallback", state=current_state.value)
+        return _fallback_keyword_extraction(user_input, current_state)
 
     # Build context-aware prompt based on conversation state
     system_prompt = _build_system_prompt(current_state)
@@ -62,7 +79,8 @@ async def extract_quote_data(
             error=str(e),
             state=current_state.value
         )
-        return None
+        # Fall back to keyword extraction on error
+        return _fallback_keyword_extraction(user_input, current_state)
 
 
 def _build_system_prompt(state: ConversationState) -> str:
@@ -162,6 +180,54 @@ def _parse_claude_response(response, state: ConversationState) -> Optional[Dict[
         if "yes" in content or "yeah" in content or "sure" in content:
             return {"has_insurance": True}
         elif "no" in content or "nope" in content:
+            return {"has_insurance": False}
+        return None
+
+    return None
+
+
+def _fallback_keyword_extraction(user_input: str, state: ConversationState) -> Optional[Dict[str, Any]]:
+    """
+    Fallback keyword-based extraction when Claude is unavailable.
+    Simple but functional - same as original implementation.
+    """
+    import re
+    from app.schemas import PianoType
+
+    user_input_lower = user_input.lower()
+
+    if state == ConversationState.GREETING:
+        # Extract piano type
+        if "baby grand" in user_input_lower or "baby-grand" in user_input_lower:
+            return {"piano_type": PianoType.BABY_GRAND}
+        elif "grand" in user_input_lower:
+            return {"piano_type": PianoType.GRAND}
+        elif "upright" in user_input_lower:
+            return {"piano_type": PianoType.UPRIGHT}
+        return None
+
+    elif state == ConversationState.PIANO_TYPE:
+        return {"pickup_address": user_input.strip()}
+
+    elif state == ConversationState.PICKUP_ADDRESS:
+        return {"delivery_address": user_input.strip()}
+
+    elif state == ConversationState.DELIVERY_ADDRESS:
+        # Extract stairs count
+        numbers = re.findall(r'\d+', user_input)
+        if numbers:
+            return {"stairs_count": int(numbers[0])}
+        if any(word in user_input_lower for word in ["no stairs", "no", "none", "zero"]):
+            return {"stairs_count": 0}
+        return None
+
+    elif state == ConversationState.STAIRS:
+        # Extract insurance
+        yes_words = ["yes", "yeah", "yep", "sure", "ok", "okay", "definitely"]
+        no_words = ["no", "nope", "nah", "not"]
+        if any(word in user_input_lower for word in yes_words):
+            return {"has_insurance": True}
+        elif any(word in user_input_lower for word in no_words):
             return {"has_insurance": False}
         return None
 
