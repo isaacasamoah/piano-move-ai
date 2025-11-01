@@ -132,53 +132,54 @@ def extract_stairs_count(user_input: str) -> Optional[int]:
     return None
 
 
-def process_user_input(session: ConversationSession, user_input: str) -> ConversationState:
+async def process_user_input(session: ConversationSession, user_input: str) -> ConversationState:
     """
-    Process user input and update session data.
+    Process user input using Claude LLM for robust natural language understanding.
     Returns the next state to transition to.
     """
+    from app.llm import extract_quote_data
+
     current_state = session.state
     details = session.quote_details
 
-    # State machine transitions
+    # Use Claude to extract data from natural language
+    extracted = await extract_quote_data(
+        user_input=user_input,
+        current_state=current_state,
+        conversation_history=session.transcript
+    )
+
+    # Update session with extracted data and determine next state
     if current_state == ConversationState.GREETING:
-        # Extract piano type
-        piano_type = extract_piano_type(user_input)
-        if piano_type:
-            details.piano_type = piano_type
+        if extracted and "piano_type" in extracted:
+            details.piano_type = extracted["piano_type"]
             return ConversationState.PIANO_TYPE
-        else:
-            # Stay in same state, will ask again
-            return ConversationState.GREETING
+        # If Claude couldn't extract, stay in same state (will ask again)
+        return ConversationState.GREETING
 
     elif current_state == ConversationState.PIANO_TYPE:
-        # Extract pickup address
-        details.pickup_address = user_input.strip()
-        return ConversationState.PICKUP_ADDRESS
+        if extracted and "pickup_address" in extracted:
+            details.pickup_address = extracted["pickup_address"]
+            return ConversationState.PICKUP_ADDRESS
+        return ConversationState.PIANO_TYPE
 
     elif current_state == ConversationState.PICKUP_ADDRESS:
-        # Extract delivery address
-        details.delivery_address = user_input.strip()
-        return ConversationState.DELIVERY_ADDRESS
+        if extracted and "delivery_address" in extracted:
+            details.delivery_address = extracted["delivery_address"]
+            return ConversationState.DELIVERY_ADDRESS
+        return ConversationState.PICKUP_ADDRESS
 
     elif current_state == ConversationState.DELIVERY_ADDRESS:
-        # Extract stairs count
-        stairs = extract_stairs_count(user_input)
-        if stairs is not None:
-            details.stairs_count = stairs
+        if extracted and "stairs_count" in extracted:
+            details.stairs_count = extracted["stairs_count"]
             return ConversationState.STAIRS
-        else:
-            # Stay in same state
-            return ConversationState.DELIVERY_ADDRESS
+        return ConversationState.DELIVERY_ADDRESS
 
     elif current_state == ConversationState.STAIRS:
-        # Extract insurance preference
-        wants_insurance = extract_yes_no(user_input)
-        if wants_insurance is not None:
-            details.has_insurance = wants_insurance
+        if extracted and "has_insurance" in extracted:
+            details.has_insurance = extracted["has_insurance"]
             return ConversationState.INSURANCE
-        else:
-            return ConversationState.STAIRS
+        return ConversationState.STAIRS
 
     elif current_state == ConversationState.INSURANCE:
         return ConversationState.QUOTE_READY

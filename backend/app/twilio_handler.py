@@ -72,8 +72,8 @@ async def handle_voice_input(call_sid: str, from_number: str, speech_result: str
         input=speech_result
     )
 
-    # Process input and get next state
-    next_state = process_user_input(session, speech_result)
+    # Process input and get next state (using Claude for extraction)
+    next_state = await process_user_input(session, speech_result)
 
     # Update session state
     update_session_state(call_sid, next_state)
