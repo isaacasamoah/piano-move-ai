@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "cd voice_agent && uvicorn voice_agent:app --host 0.0.0.0 --port $PORT",
+    "startCommand": "uvicorn voice_agent.voice_agent:app --host 0.0.0.0 --port $PORT",
     "healthcheckPath": "/",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",

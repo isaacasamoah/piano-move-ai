@@ -230,7 +230,7 @@ async def handle_voice(
     if agent_response.get("is_complete"):
         # Import calculator dynamically
         calculator_name = business.get("quote_calculator", "calculate_quote")
-        from lab.calculators import piano_quote
+        from calculators import piano_quote
         calculator_func = getattr(piano_quote, calculator_name)
 
         # Calculate quote
