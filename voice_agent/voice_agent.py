@@ -244,8 +244,34 @@ async def handle_voice(
             # Calculate quote
             quote = calculator_func(session["data"], business)
 
-            # Send SMS
-            # TODO: Implement SMS sending via Twilio
+            # Send SMS with quote details
+            try:
+                from twilio.rest import Client
+                import os
+                twilio_client = Client(
+                    os.getenv("TWILIO_ACCOUNT_SID"),
+                    os.getenv("TWILIO_AUTH_TOKEN")
+                )
+
+                # Build concise SMS (Twilio trial has message length limits)
+                sms_message = f"""Piano Move Quote
+
+{quote['piano_type']} - {quote['distance_km']}km
+Stairs: {quote['stairs_count']}
+Insurance: {'Yes' if quote['has_insurance'] else 'No'}
+
+TOTAL: ${quote['total']:.2f}
+
+{business['display_name']}"""
+
+                twilio_client.messages.create(
+                    body=sms_message,
+                    from_=business["phone_number"],
+                    to=From
+                )
+                logger.info("sms_sent", call_sid=CallSid, to=From, total=quote["total"])
+            except Exception as e:
+                logger.error("sms_send_failed", error=str(e), call_sid=CallSid)
 
             # Build completion message
             completion_msg = business.get("completion_message", "Your quote is {total} dollars. Thanks for calling!")
@@ -261,16 +287,18 @@ async def handle_voice(
             # Clean up session
             del sessions[CallSid]
 
-            # Send final message and hang up
+            # Send final message with pause before hangup
             response = VoiceResponse()
             response.say(completion_msg, voice=business["agent"]["voice"])
+            response.pause(length=2)  # Give them time to hear the full message
             response.hangup()
             return str(response)
 
         except Exception as e:
             logger.error("quote_calculation_failed", error=str(e), call_sid=CallSid, session_data=session["data"])
             response = VoiceResponse()
-            response.say("I have all your details. Let me have someone call you back with your quote shortly.")
+            response.say("I have all your details. I'll text that quote to you right now. Thanks for calling!")
+            response.pause(length=2)
             response.hangup()
             return str(response)
 
