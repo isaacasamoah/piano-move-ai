@@ -1,0 +1,109 @@
+{
+  "business_id": "piano_moving_001",
+  "business_type": "piano_moving",
+  "display_name": "Sydney Piano Movers",
+  "agent_persona": {
+    "name": "Alex",
+    "role": "Quote Specialist",
+    "greeting_template": "Hi! I'm {agent_name} from {company_name}. I can help you get a quote for your piano move. What type of piano are you moving?"
+  },
+  "quote_calculation": {
+    "required_fields": [
+      "piano_type",
+      "pickup_address",
+      "delivery_address",
+      "stairs_count",
+      "has_insurance"
+    ],
+    "field_descriptions": {
+      "piano_type": {
+        "label": "Piano Type",
+        "type": "enum",
+        "options": ["upright", "baby_grand", "grand"],
+        "prompt": "What type of piano? (upright, baby grand, or grand piano)",
+        "validation": "Must be one of: upright, baby grand, grand"
+      },
+      "pickup_address": {
+        "label": "Pickup Address",
+        "type": "string",
+        "prompt": "What's the pickup address?",
+        "validation": "Must include street, suburb, and state"
+      },
+      "delivery_address": {
+        "label": "Delivery Address",
+        "type": "string",
+        "prompt": "What's the delivery address?",
+        "validation": "Must include street, suburb, and state"
+      },
+      "stairs_count": {
+        "label": "Number of Stairs",
+        "type": "integer",
+        "prompt": "How many stairs at pickup and delivery combined?",
+        "validation": "Must be a number (0 if no stairs)",
+        "default": 0
+      },
+      "has_insurance": {
+        "label": "Insurance",
+        "type": "boolean",
+        "prompt": "Would you like insurance coverage?",
+        "validation": "Must be yes or no"
+      }
+    },
+    "pricing_formula": {
+      "base_prices": {
+        "upright": 200.00,
+        "baby_grand": 350.00,
+        "grand": 500.00
+      },
+      "distance_rate_per_km": 1.50,
+      "stairs_rate_per_step": 15.00,
+      "insurance_percentage": 0.15
+    }
+  },
+  "domain_expertise": {
+    "common_piano_types": [
+      "upright",
+      "baby grand",
+      "grand",
+      "console",
+      "spinet"
+    ],
+    "address_examples": [
+      "123 Smith Street, Sydney, NSW",
+      "456 Queen St, Melbourne, VIC"
+    ],
+    "clarification_examples": {
+      "piano_type": [
+        "Is it an upright piano or a grand piano?",
+        "Could you clarify if it's a baby grand or full grand piano?"
+      ],
+      "stairs": [
+        "Just to confirm, are there stairs at pickup, delivery, or both?",
+        "How many stairs total between both locations?"
+      ]
+    },
+    "transfer_triggers": [
+      "special_access_required",
+      "crane_needed",
+      "international_move",
+      "storage_required",
+      "customer_requests_human"
+    ]
+  },
+  "quote_delivery": {
+    "voice": {
+      "template": "Your quote for moving a {piano_type} is ${total}. That includes {distance_km} kilometers of travel{stairs_text}{insurance_text}. I'm sending the details to your phone now. Thanks for choosing {company_name}!"
+    },
+    "sms": {
+      "trial_mode": true,
+      "template": "PIANO MOVE QUOTE\n\nType: {piano_type}\nDistance: {distance_km}km\nStairs: {stairs_count}\nInsurance: {insurance}\n\nSubtotal: ${subtotal}\nTotal: ${total}\n\n{trial_notice}\n\nQuestions? Call us back!"
+    }
+  },
+  "conversation_settings": {
+    "max_clarification_attempts": 2,
+    "enable_batch_extraction": true,
+    "response_max_sentences": 3,
+    "enable_human_transfer": true,
+    "transfer_phone_number": null
+  }
+}
