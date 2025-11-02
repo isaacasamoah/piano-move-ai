@@ -76,6 +76,9 @@ out/
 # Railway
 .railway/
 
+# Internal documentation (not for public)
+.internal/
+
 # Temporary files
 *.tmp
 *.bak
