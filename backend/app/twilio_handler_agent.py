@@ -11,6 +11,7 @@ from app.agent import claude_agent_turn
 from app.business_config import get_business_from_twilio_number, load_business_config
 from app.quote_engine import calculate_quote, format_quote_summary
 from app.config import get_settings
+from app.schemas import QuoteDetails, PianoType
 
 logger = structlog.get_logger()
 
