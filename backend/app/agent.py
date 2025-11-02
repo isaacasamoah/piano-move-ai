@@ -9,7 +9,7 @@ import structlog
 from anthropic import Anthropic
 import json
 
-from app.config import settings
+from app.config import get_settings
 from app.prompt_composer import compose_agent_prompt
 
 logger = structlog.get_logger()
@@ -20,14 +20,15 @@ class ClaudeAgent:
 
     def __init__(self):
         """Initialize Claude client."""
+        self.settings = get_settings()
         self.client = self._get_claude_client()
 
     def _get_claude_client(self) -> Optional[Anthropic]:
         """Get Claude client if API key is configured."""
-        if not settings.anthropic_api_key or settings.anthropic_api_key == "not_set":
+        if not self.settings.anthropic_api_key or self.settings.anthropic_api_key == "not_set":
             logger.warning("anthropic_api_key_not_configured")
             return None
-        return Anthropic(api_key=settings.anthropic_api_key)
+        return Anthropic(api_key=self.settings.anthropic_api_key)
 
     async def process_turn(
         self,

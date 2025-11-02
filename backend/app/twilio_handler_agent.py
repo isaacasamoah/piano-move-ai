@@ -10,7 +10,7 @@ import structlog
 from app.agent import claude_agent_turn
 from app.business_config import get_business_from_twilio_number, load_business_config
 from app.quote_engine import calculate_quote, format_quote_summary
-from app.config import settings
+from app.config import get_settings
 
 logger = structlog.get_logger()
 
@@ -157,6 +157,7 @@ async def handle_voice_input_agent(call_sid: str, from_number: str, speech_resul
             call_sid=call_sid,
             reason=response.get("transfer_reason")
         )
+        settings = get_settings()
         return _generate_transfer_twiml(
             response.get("response", "Let me connect you with our team."),
             transfer_number=settings.transfer_phone_number if hasattr(settings, 'transfer_phone_number') else None
@@ -260,6 +261,8 @@ async def _send_quote_sms_agent(
 ):
     """Send quote via SMS using business config."""
     from twilio.rest import Client
+
+    settings = get_settings()
 
     # Check if Twilio is configured
     if settings.twilio_account_sid == "not_set":
