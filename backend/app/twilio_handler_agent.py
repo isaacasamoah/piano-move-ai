@@ -302,8 +302,9 @@ def _generate_gather_twiml(prompt: str) -> str:
         input="speech",
         action="/twilio/voice",
         method="POST",
-        timeout=3,
-        speech_timeout="auto"
+        timeout=5,  # Increased from 3 to give user more time
+        speech_timeout=3,  # Wait 3 seconds after user stops talking
+        hints="upright, baby grand, grand piano, yes, no"  # Help Twilio STT
     )
     gather.say(prompt, voice="Polly.Joanna")
     response.append(gather)
