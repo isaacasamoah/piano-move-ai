@@ -1,0 +1,52 @@
+{
+  "business_id": "sydney_piano_movers",
+  "display_name": "Sydney Piano Movers",
+  "phone_number": "+12299223706",
+
+  "agent": {
+    "name": "Alex",
+    "voice": "Polly.Joanna",
+    "greeting": "Hi, I'm Alex from Sydney Piano Movers. I can help you get a quote. What type of piano are you moving?"
+  },
+
+  "extract": {
+    "piano_type": {
+      "type": "enum",
+      "options": ["upright", "baby_grand", "grand"],
+      "required": true,
+      "hint": "What type of piano? Upright, baby grand, or grand?"
+    },
+    "pickup_address": {
+      "type": "string",
+      "required": true,
+      "hint": "Where are we picking it up from?"
+    },
+    "delivery_address": {
+      "type": "string",
+      "required": true,
+      "hint": "And where's it going to?"
+    },
+    "stairs_count": {
+      "type": "integer",
+      "required": true,
+      "default": 0,
+      "hint": "Any stairs at either location?"
+    },
+    "has_insurance": {
+      "type": "boolean",
+      "required": true,
+      "hint": "Would you like insurance coverage?"
+    }
+  },
+
+  "quote_calculator": "calculate_piano_quote",
+
+  "voice_settings": {
+    "listen_timeout": 4,
+    "speech_end_timeout": 1.5,
+    "max_no_input_retries": 2,
+    "stt_hints": "upright, baby grand, grand piano, Brisbane, Sydney, stairs, insurance"
+  },
+
+  "completion_message": "Perfect! Let me calculate that for you now. Your quote is ${total}. I'm texting you the details right now. Thanks for calling {company_name}!"
+}

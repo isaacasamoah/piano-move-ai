@@ -79,6 +79,9 @@ out/
 # Internal documentation (not for public)
 .internal/
 
+# Claude Code configuration (keep local)
+.claude/
+
 # Temporary files
 *.tmp
 *.bak
