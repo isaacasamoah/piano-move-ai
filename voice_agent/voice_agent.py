@@ -173,6 +173,13 @@ def generate_twiml(message: str, business: Dict[str, Any]) -> str:
     return str(response)
 
 
+@app.get("/")
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Railway."""
+    return {"status": "healthy", "service": "voice_agent"}
+
+
 @app.post("/voice", response_class=PlainTextResponse)
 async def handle_voice(
     CallSid: str = Form(...),
