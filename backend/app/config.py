@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     # Server URL for Twilio webhooks (set this to your deployed URL)
     server_url: str = "http://localhost:8000"
 
+    # Agent configuration (A/B testing)
+    use_agent: bool = True  # Set to True for Claude agent, False for state machine
+    agent_rollout_percentage: int = 100  # 0-100, for gradual rollout
+
     class Config:
         env_file = ".env"
         case_sensitive = False

@@ -1,0 +1,336 @@
+{
+  "test_suite_version": "1.0.0",
+  "business_type": "piano_moving",
+  "test_cases": [
+    {
+      "test_id": "happy_path_001",
+      "name": "Happy Path - Linear Conversation",
+      "scenario_type": "happy_path",
+      "tests_principle": "respect_customer_time",
+      "description": "Customer provides info linearly in order. Agent should extract accurately and complete in ~6 turns.",
+      "conversation": [
+        {
+          "role": "user",
+          "content": "I need to move my piano",
+          "expected_extraction": {}
+        },
+        {
+          "role": "user",
+          "content": "It's an upright",
+          "expected_extraction": {
+            "piano_type": "upright"
+          }
+        },
+        {
+          "role": "user",
+          "content": "56 Turnip Street, Brisbane QLD",
+          "expected_extraction": {
+            "pickup_address": "56 Turnip Street, Brisbane QLD"
+          }
+        },
+        {
+          "role": "user",
+          "content": "56 Tring Street, Gold Coast QLD",
+          "expected_extraction": {
+            "delivery_address": "56 Tring Street, Gold Coast QLD"
+          }
+        },
+        {
+          "role": "user",
+          "content": "No stairs",
+          "expected_extraction": {
+            "stairs_count": 0
+          }
+        },
+        {
+          "role": "user",
+          "content": "Yes to insurance",
+          "expected_extraction": {
+            "has_insurance": true
+          }
+        }
+      ],
+      "pass_criteria": {
+        "extraction_accuracy": 1.0,
+        "max_turns": 6,
+        "avg_response_length_sentences": 3,
+        "constitutional_compliance": ["respect_customer_time", "build_trust_through_transparency"]
+      }
+    },
+    {
+      "test_id": "batch_info_001",
+      "name": "Batch Information - Efficient Customer",
+      "scenario_type": "batch_information",
+      "tests_principle": "respect_customer_time",
+      "description": "Customer provides all info at once. Agent should extract efficiently and not ignore batch data.",
+      "conversation": [
+        {
+          "role": "user",
+          "content": "Baby grand from 34 Street Street Grayson Brisbane QLD to 45 Gree Street Grayton Brisbane QLD, 3 stairs at pickup and 7 at delivery, yes to insurance",
+          "expected_extraction": {
+            "piano_type": "baby_grand",
+            "pickup_address": "34 Street Street, Grayson, Brisbane QLD",
+            "delivery_address": "45 Gree Street, Grayton, Brisbane QLD",
+            "stairs_count": 10,
+            "has_insurance": true
+          }
+        }
+      ],
+      "pass_criteria": {
+        "extraction_accuracy": 1.0,
+        "max_turns": 2,
+        "batch_extraction_min_fields": 3,
+        "constitutional_compliance": ["respect_customer_time"]
+      }
+    },
+    {
+      "test_id": "ambiguous_001",
+      "name": "Ambiguous Input - Never Assume Location",
+      "scenario_type": "ambiguous_input",
+      "tests_principle": "build_trust_through_transparency",
+      "description": "Customer says 'Richmond' without state. Agent must NOT assume Richmond VIC.",
+      "conversation": [
+        {
+          "role": "user",
+          "content": "Baby grand",
+          "expected_extraction": {
+            "piano_type": "baby_grand"
+          }
+        },
+        {
+          "role": "user",
+          "content": "Richmond",
+          "expected_extraction": {},
+          "must_ask_clarification": true,
+          "must_not_assume": ["Richmond VIC", "Richmond, Victoria"]
+        }
+      ],
+      "pass_criteria": {
+        "no_assumptions_made": true,
+        "asked_for_clarification": true,
+        "constitutional_compliance": ["build_trust_through_transparency"]
+      }
+    },
+    {
+      "test_id": "ambiguous_002",
+      "name": "Ambiguous Input - City Without Address",
+      "scenario_type": "ambiguous_input",
+      "tests_principle": "build_trust_through_transparency",
+      "description": "Customer says 'Melbourne' without street address. Agent must ask for full address.",
+      "conversation": [
+        {
+          "role": "user",
+          "content": "Upright",
+          "expected_extraction": {
+            "piano_type": "upright"
+          }
+        },
+        {
+          "role": "user",
+          "content": "Melbourne",
+          "expected_extraction": {},
+          "must_ask_clarification": true
+        }
+      ],
+      "pass_criteria": {
+        "no_assumptions_made": true,
+        "asked_for_street_address": true,
+        "constitutional_compliance": ["build_trust_through_transparency"]
+      }
+    },
+    {
+      "test_id": "backtrack_001",
+      "name": "Backtracking - Customer Correction",
+      "scenario_type": "backtracking",
+      "tests_principle": "human_centric_service",
+      "description": "Customer corrects piano type mid-conversation. Agent should handle gracefully.",
+      "conversation": [
+        {
+          "role": "user",
+          "content": "Baby grand",
+          "expected_extraction": {
+            "piano_type": "baby_grand"
+          }
+        },
+        {
+          "role": "user",
+          "content": "123 Main St Brisbane QLD",
+          "expected_extraction": {
+            "pickup_address": "123 Main St Brisbane QLD"
+          }
+        },
+        {
+          "role": "user",
+          "content": "Actually, sorry, it's a grand piano, not a baby grand",
+          "expected_extraction": {
+            "piano_type": "grand"
+          }
+        }
+      ],
+      "pass_criteria": {
+        "handles_correction": true,
+        "final_piano_type": "grand",
+        "constitutional_compliance": ["human_centric_service"]
+      }
+    },
+    {
+      "test_id": "complex_question_001",
+      "name": "Complex Question - Insurance Policy Details",
+      "scenario_type": "complex_question",
+      "tests_principle": "human_centric_service",
+      "description": "Customer asks about insurance policy specifics. Agent should transfer to human.",
+      "conversation": [
+        {
+          "role": "user",
+          "content": "Baby grand",
+          "expected_extraction": {
+            "piano_type": "baby_grand"
+          }
+        },
+        {
+          "role": "user",
+          "content": "What happens if the piano gets damaged after delivery? Does insurance cover that?",
+          "expected_transfer": true,
+          "transfer_reason": "Insurance policy question outside agent scope"
+        }
+      ],
+      "pass_criteria": {
+        "should_transfer_to_human": true,
+        "does_not_make_up_answer": true,
+        "constitutional_compliance": ["human_centric_service"]
+      }
+    },
+    {
+      "test_id": "complex_question_002",
+      "name": "Complex Question - Scheduling/Booking",
+      "scenario_type": "complex_question",
+      "tests_principle": "human_centric_service",
+      "description": "Customer asks about booking specific dates. Agent should transfer to human.",
+      "conversation": [
+        {
+          "role": "user",
+          "content": "Upright from Brisbane to Gold Coast, can you do it next Tuesday at 2pm?",
+          "expected_transfer": true,
+          "transfer_reason": "Scheduling outside agent scope"
+        }
+      ],
+      "pass_criteria": {
+        "should_transfer_to_human": true,
+        "constitutional_compliance": ["human_centric_service"]
+      }
+    },
+    {
+      "test_id": "graceful_failure_001",
+      "name": "Graceful Failure - Can't Extract After 2 Tries",
+      "scenario_type": "graceful_failure",
+      "tests_principle": "human_centric_service",
+      "description": "Agent can't extract piano type after 2 attempts. Should transfer to human, not loop forever.",
+      "conversation": [
+        {
+          "role": "user",
+          "content": "The big one",
+          "expected_extraction": {}
+        },
+        {
+          "role": "user",
+          "content": "I don't know, it's just really big",
+          "expected_extraction": {},
+          "expected_transfer_after_retries": true
+        }
+      ],
+      "pass_criteria": {
+        "should_transfer_after_retries": true,
+        "max_retries": 2,
+        "constitutional_compliance": ["human_centric_service"]
+      }
+    },
+    {
+      "test_id": "efficiency_001",
+      "name": "Efficiency - Response Length",
+      "scenario_type": "efficiency_test",
+      "tests_principle": "respect_customer_time",
+      "description": "All agent responses should be under 3 sentences.",
+      "conversation": [
+        {
+          "role": "user",
+          "content": "Baby grand",
+          "max_response_sentences": 3
+        },
+        {
+          "role": "user",
+          "content": "123 Main St Brisbane QLD",
+          "max_response_sentences": 3
+        },
+        {
+          "role": "user",
+          "content": "456 High St Brisbane QLD",
+          "max_response_sentences": 3
+        }
+      ],
+      "pass_criteria": {
+        "all_responses_under_3_sentences": true,
+        "constitutional_compliance": ["respect_customer_time"]
+      }
+    },
+    {
+      "test_id": "edge_case_001",
+      "name": "Edge Case - Multiple Pianos",
+      "scenario_type": "edge_case",
+      "tests_principle": "human_centric_service",
+      "description": "Customer wants to move two pianos. Agent should recognize this is outside scope and transfer.",
+      "conversation": [
+        {
+          "role": "user",
+          "content": "I need to move a baby grand and an upright from Brisbane to Canberra",
+          "expected_transfer": true,
+          "transfer_reason": "Multi-piano move outside agent scope"
+        }
+      ],
+      "pass_criteria": {
+        "recognizes_multi_piano": true,
+        "should_transfer_to_human": true,
+        "constitutional_compliance": ["human_centric_service"]
+      }
+    },
+    {
+      "test_id": "edge_case_002",
+      "name": "Edge Case - International Move",
+      "scenario_type": "edge_case",
+      "tests_principle": "human_centric_service",
+      "description": "Customer wants international move. Agent should transfer to human.",
+      "conversation": [
+        {
+          "role": "user",
+          "content": "Baby grand from Sydney to London",
+          "expected_transfer": true,
+          "transfer_reason": "International move outside agent scope"
+        }
+      ],
+      "pass_criteria": {
+        "recognizes_international": true,
+        "should_transfer_to_human": true,
+        "constitutional_compliance": ["human_centric_service"]
+      }
+    },
+    {
+      "test_id": "edge_case_003",
+      "name": "Edge Case - Urgent Timeline",
+      "scenario_type": "edge_case",
+      "tests_principle": "human_centric_service",
+      "description": "Customer needs move in next 24 hours. Agent should transfer for urgent scheduling.",
+      "conversation": [
+        {
+          "role": "user",
+          "content": "Baby grand from Brisbane to Gold Coast, I need it done tomorrow morning",
+          "expected_transfer": true,
+          "transfer_reason": "Urgent timeline requires human coordination"
+        }
+      ],
+      "pass_criteria": {
+        "recognizes_urgency": true,
+        "should_transfer_to_human": true,
+        "constitutional_compliance": ["human_centric_service"]
+      }
+    }
+  ]
+}
