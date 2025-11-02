@@ -12,6 +12,7 @@ Architecture:
 """
 
 import os
+import sys
 import json
 from pathlib import Path
 from typing import Dict, Any, Optional
@@ -20,6 +21,9 @@ from fastapi import FastAPI, Request, Form
 from fastapi.responses import PlainTextResponse
 from twilio.twiml.voice_response import VoiceResponse, Gather
 from anthropic import Anthropic
+
+# Add voice_agent directory to Python path so we can import calculators
+sys.path.insert(0, str(Path(__file__).parent))
 
 # Setup
 app = FastAPI()
