@@ -235,32 +235,44 @@ async def handle_voice(
 
     # Complete? Calculate quote and send SMS
     if agent_response.get("is_complete"):
-        # Import calculator dynamically
-        calculator_name = business.get("quote_calculator", "calculate_quote")
-        from calculators import piano_quote
-        calculator_func = getattr(piano_quote, calculator_name)
+        try:
+            # Import calculator dynamically
+            calculator_name = business.get("quote_calculator", "calculate_quote")
+            from calculators import piano_quote
+            calculator_func = getattr(piano_quote, calculator_name)
 
-        # Calculate quote
-        quote = calculator_func(session["data"], business)
+            # Calculate quote
+            quote = calculator_func(session["data"], business)
 
-        # Send SMS
-        # TODO: Implement SMS sending via Twilio
+            # Send SMS
+            # TODO: Implement SMS sending via Twilio
 
-        # Build completion message
-        completion_msg = business.get("completion_message", "Your quote is ${total}. I'm texting you the details now!")
-        completion_msg = completion_msg.format(
-            total=quote["total"],
-            company_name=business["display_name"]
-        )
+            # Build completion message
+            completion_msg = business.get("completion_message", "Your quote is {total} dollars. Thanks for calling!")
+            # Replace ${total} with {total} for Python format
+            completion_msg = completion_msg.replace("${", "{")
+            completion_msg = completion_msg.format(
+                total=quote["total"],
+                company_name=business["display_name"]
+            )
 
-        # Clean up session
-        del sessions[CallSid]
+            logger.info("quote_complete", call_sid=CallSid, total=quote["total"])
 
-        # Send final message and hang up
-        response = VoiceResponse()
-        response.say(completion_msg, voice=business["agent"]["voice"])
-        response.hangup()
-        return str(response)
+            # Clean up session
+            del sessions[CallSid]
+
+            # Send final message and hang up
+            response = VoiceResponse()
+            response.say(completion_msg, voice=business["agent"]["voice"])
+            response.hangup()
+            return str(response)
+
+        except Exception as e:
+            logger.error("quote_calculation_failed", error=str(e), call_sid=CallSid, session_data=session["data"])
+            response = VoiceResponse()
+            response.say("I have all your details. Let me have someone call you back with your quote shortly.")
+            response.hangup()
+            return str(response)
 
     # Not complete - continue conversation
     return generate_twiml(agent_response["message"], business)

@@ -43,7 +43,7 @@
 
   "voice_settings": {
     "listen_timeout": 4,
-    "speech_end_timeout": 1.5,
+    "speech_end_timeout": 1,
     "max_no_input_retries": 2,
     "stt_hints": "upright, baby grand, grand piano, Brisbane, Sydney, stairs, insurance"
   },
