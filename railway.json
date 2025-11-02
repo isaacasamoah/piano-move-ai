@@ -1,8 +1,7 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS",
-    "buildCommand": "pip install -r voice_agent/requirements.txt"
+    "builder": "NIXPACKS"
   },
   "deploy": {
     "startCommand": "cd voice_agent && uvicorn voice_agent:app --host 0.0.0.0 --port $PORT",
