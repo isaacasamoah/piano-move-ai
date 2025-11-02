@@ -302,15 +302,30 @@ def _generate_gather_twiml(prompt: str) -> str:
         input="speech",
         action="/twilio/voice",
         method="POST",
-        timeout=5,  # Increased from 3 to give user more time
-        speech_timeout=3,  # Wait 3 seconds after user stops talking
+        timeout=3,  # Time to wait for user to start speaking
+        speech_timeout=2,  # Time after user stops talking
         hints="upright, baby grand, grand piano, yes, no"  # Help Twilio STT
     )
     gather.say(prompt, voice="Polly.Joanna")
     response.append(gather)
 
-    # Fallback if no input
-    response.say("I didn't hear anything. Please call back when you're ready.", voice="Polly.Joanna")
+    # Fallback if no input - ask them to repeat
+    response.say("Sorry, I didn't catch that. Could you please repeat?", voice="Polly.Joanna")
+
+    # Give them another chance
+    gather2 = Gather(
+        input="speech",
+        action="/twilio/voice",
+        method="POST",
+        timeout=3,
+        speech_timeout=2,
+        hints="upright, baby grand, grand piano, yes, no"
+    )
+    gather2.say(prompt, voice="Polly.Joanna")
+    response.append(gather2)
+
+    # If still nothing, offer transfer
+    response.say("I'm having trouble hearing you. Let me connect you with someone who can help.", voice="Polly.Joanna")
     response.hangup()
 
     return str(response)

@@ -82,7 +82,7 @@ When you have all {len(required_fields)} pieces confirmed, end the conversation 
 - Keep each response under 3 sentences (this is a phone call, not a text chat)
 - Be efficient and direct
 - Extract multiple pieces of information if the customer volunteers them
-- Don't waste time with unnecessary pleasantries or repetition
+- Be warm and friendly, but get to the point - brief greetings are good, long small talk is not
 
 ### 2. BUILD TRUST THROUGH TRANSPARENCY
 - NEVER assume or guess information
@@ -120,10 +120,12 @@ When you have all {len(required_fields)} pieces confirmed, end the conversation 
    You CANNOT handle: Booking/scheduling, complaints, complex policy questions, damage claims
    → If asked something outside your lane: "Let me connect you with our team for that."
 
-4. **BE EFFICIENT, NOT ROBOTIC**
-   - Use conversational tone ("Got it", "Perfect", "Great")
-   - Mirror customer's language
-   - Don't sound like you're reading a script
+4. **BE HUMAN, NOT ROBOTIC**
+   - Use natural conversational language ("Got it", "Perfect", "Great", "Thanks")
+   - Mirror the customer's energy and language style
+   - Sound like a helpful human, not a script-reading bot
+   - Brief pleasantries are good (they build rapport), just keep them brief
+   - Acknowledge what customers say before moving on ("Thanks for that")
 
 5. **FAIL GRACEFULLY**
    - If stuck after 2 attempts → offer to transfer to human
@@ -203,28 +205,25 @@ Now respond to the customer's latest input.
     def _build_field_descriptions(self, business_config: Dict[str, Any]) -> str:
         """Build numbered list of fields to extract."""
         required_fields = business_config.get("quote_calculation", {}).get("required_fields", [])
-
-        # Get field metadata from conversation flow states
-        states = business_config.get("conversation_flow", {}).get("states", [])
+        field_descriptions = business_config.get("quote_calculation", {}).get("field_descriptions", {})
 
         descriptions = []
         for i, field in enumerate(required_fields, 1):
-            # Find corresponding state
-            state_config = next((s for s in states if s.get("extraction", {}).get("field") == field), None)
+            # Get field metadata directly from config
+            field_config = field_descriptions.get(field, {})
+            field_type = field_config.get("type", "string")
+            options = field_config.get("options", [])
+            prompt_hint = field_config.get("prompt", "")
 
-            if state_config:
-                extraction = state_config.get("extraction", {})
-                field_type = extraction.get("type", "string")
-                options = extraction.get("options", [])
-
-                if options:
-                    desc = f"{i}. **{field}** ({field_type}: {', '.join(options)})"
-                else:
-                    desc = f"{i}. **{field}** ({field_type})"
-
-                descriptions.append(desc)
+            if options:
+                desc = f"{i}. **{field}** ({field_type}: {', '.join(options)})"
             else:
-                descriptions.append(f"{i}. **{field}**")
+                desc = f"{i}. **{field}** ({field_type})"
+
+            if prompt_hint:
+                desc += f"\n   Example question: \"{prompt_hint}\""
+
+            descriptions.append(desc)
 
         return "\n".join(descriptions)
 
@@ -243,7 +242,7 @@ Now respond to the customer's latest input.
     def _format_transcript(self, transcript: List[Dict[str, str]]) -> str:
         """Format conversation transcript."""
         if not transcript:
-            return "(No conversation history yet - this is the start)"
+            return "(No conversation history yet - this is the FIRST message. Start with a brief greeting, introduce yourself, and ask for the first piece of information.)"
 
         lines = []
         for turn in transcript[-5:]:  # Last 5 turns for context
