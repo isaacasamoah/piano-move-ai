@@ -154,7 +154,7 @@ def generate_twiml(message: str, business: Dict[str, Any]) -> str:
 
     gather = Gather(
         input="speech",
-        action="/voice",
+        action="/twilio/voice",
         method="POST",
         timeout=voice_settings.get("listen_timeout", 4),
         speech_timeout=voice_settings.get("speech_end_timeout", 1.5),
@@ -180,7 +180,7 @@ async def health_check():
     return {"status": "healthy", "service": "voice_agent"}
 
 
-@app.post("/voice", response_class=PlainTextResponse)
+@app.post("/twilio/voice", response_class=PlainTextResponse)
 async def handle_voice(
     CallSid: str = Form(...),
     From: str = Form(...),
